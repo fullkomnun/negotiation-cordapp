@@ -15,7 +15,20 @@ open class ProposalAndTradeContract : Contract {
         val cmd = tx.commands.requireSingleCommand<Commands>()
         when (cmd.value) {
             is Commands.Propose -> requireThat {
-                // TODO: Add contractual logic.
+                "There is exactly one output" using (tx.outputStates.size == 1)
+                "The single output is of type ProposalState" using (tx.outputsOfType<ProposalState>().size == 1)
+                val output = tx.outputsOfType<ProposalState>().single()
+
+                "There is exactly one command" using (tx.commands.size == 1)
+
+                "The proposer is a required signer" using (cmd.signers.contains(output.proposer.owningKey))
+                "The proposee is a required signer" using (cmd.signers.contains(output.proposee.owningKey))
+
+                "The buyer is either the proposer or the proposee" using (output.buyer in listOf(output.proposer, output.proposee))
+                "The seller is either the proposer or the proposee" using (output.seller in listOf(output.proposer, output.proposee))
+
+                "There are zero input states" using (tx.inputStates.isEmpty())
+                "There is no timestamp" using (tx.timeWindow == null)
             }
             is Commands.Accept -> requireThat {
                 // TODO: Add contractual logic.

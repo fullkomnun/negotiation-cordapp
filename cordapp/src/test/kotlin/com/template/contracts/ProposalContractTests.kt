@@ -2,7 +2,6 @@ package com.template.contracts
 
 import com.template.ProposalAndTradeContract
 import com.template.ProposalState
-import net.corda.core.crypto.SecureHash
 import net.corda.testing.*
 import net.corda.testing.contracts.DUMMY_PROGRAM_ID
 import net.corda.testing.contracts.DummyState
@@ -30,10 +29,6 @@ class ProposalContractTests {
                 command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
                 fails()
                 tweak {
-                    output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
-                    verifies()
-                }
-                tweak {
                     output(DUMMY_PROGRAM_ID) { DummyState() }
                     fails()
                 }
@@ -42,6 +37,8 @@ class ProposalContractTests {
                     output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
                     fails()
                 }
+                output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
+                verifies()
             }
         }
     }
@@ -51,11 +48,6 @@ class ProposalContractTests {
         ledger {
             transaction {
                 output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
-                fails()
-                tweak {
-                    command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
-                    verifies()
-                }
                 tweak {
                     command(ALICE_PUBKEY, BOB_PUBKEY) { DummyCommandData }
                     fails()
@@ -65,6 +57,8 @@ class ProposalContractTests {
                     command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
                     fails()
                 }
+                command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
+                verifies()
             }
         }
     }
@@ -75,10 +69,6 @@ class ProposalContractTests {
             transaction {
                 output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
                 tweak {
-                    command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
-                    verifies()
-                }
-                tweak {
                     command(ALICE_PUBKEY, CHARLIE_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
                     fails()
                 }
@@ -86,23 +76,8 @@ class ProposalContractTests {
                     command(CHARLIE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
                     fails()
                 }
-            }
-        }
-    }
-
-    @Test
-    fun `in proposal transactions, the proposer and proposee are distinct`() {
-        ledger {
-            transaction {
                 command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
-                tweak {
-                    output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
-                    verifies()
-                }
-                tweak {
-                    output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, ALICE) }
-                    fails()
-                }
+                verifies()
             }
         }
     }
@@ -113,10 +88,7 @@ class ProposalContractTests {
             transaction {
                 command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
                 tweak {
-                    output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
-                    verifies()
-                }
-                tweak {
+                    // Order reversed - buyer = proposee, seller = proposer
                     output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, BOB, ALICE) }
                     verifies()
                 }
@@ -128,22 +100,20 @@ class ProposalContractTests {
                     output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, CHARLIE, ALICE, BOB) }
                     fails()
                 }
+                output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
+                verifies()
             }
         }
     }
 
     @Test
-    fun `proposal transactions have no inputs, attachments or timestamps`() {
+    fun `proposal transactions have no inputs and no timestamp`() {
         ledger {
             transaction {
                 output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
                 command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
                 tweak {
                     input(DUMMY_PROGRAM_ID) { DummyState() }
-                    fails()
-                }
-                tweak {
-                    attachment(SecureHash.zeroHash)
                     fails()
                 }
                 tweak {
