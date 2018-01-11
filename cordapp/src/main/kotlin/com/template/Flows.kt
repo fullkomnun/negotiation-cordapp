@@ -11,12 +11,12 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
 
-object ProposalFlowPair {
+object ProposalFlow {
     enum class Role { Buyer, Seller }
 
     @InitiatingFlow
     @StartableByRPC
-    class ProposeTrade(val role: Role, val amount: Int, val counterparty: Party) : FlowLogic<Unit>() {
+    class Initiator(val role: Role, val amount: Int, val counterparty: Party) : FlowLogic<Unit>() {
         override val progressTracker = ProgressTracker()
 
         @Suspendable
@@ -51,8 +51,8 @@ object ProposalFlowPair {
         }
     }
 
-    @InitiatedBy(ProposeTrade::class)
-    class ProposeTradeResponder(val counterpartySession: FlowSession) : FlowLogic<Unit>() {
+    @InitiatedBy(Initiator::class)
+    class Responder(val counterpartySession: FlowSession) : FlowLogic<Unit>() {
         @Suspendable
         override fun call() {
             subFlow(object : SignTransactionFlow(counterpartySession) {
@@ -64,10 +64,10 @@ object ProposalFlowPair {
     }
 }
 
-object AcceptanceFlowPair {
+object AcceptanceFlow {
     @InitiatingFlow
     @StartableByRPC
-    class AcceptProposal(val proposalId: UniqueIdentifier) : FlowLogic<Unit>() {
+    class Initiator(val proposalId: UniqueIdentifier) : FlowLogic<Unit>() {
         override val progressTracker = ProgressTracker()
 
         @Suspendable
@@ -104,8 +104,8 @@ object AcceptanceFlowPair {
         }
     }
 
-    @InitiatedBy(AcceptProposal::class)
-    class AcceptProposalResponder(val counterpartySession: FlowSession) : FlowLogic<Unit>() {
+    @InitiatedBy(Initiator::class)
+    class Responder(val counterpartySession: FlowSession) : FlowLogic<Unit>() {
         @Suspendable
         override fun call() {
             subFlow(object : SignTransactionFlow(counterpartySession) {
@@ -121,10 +121,10 @@ object AcceptanceFlowPair {
     }
 }
 
-object ModificationFlowPair {
+object ModificationFlow {
     @InitiatingFlow
     @StartableByRPC
-    class ModifyProposal(val proposalId: UniqueIdentifier, val newAmount: Int) : FlowLogic<Unit>() {
+    class Initiator(val proposalId: UniqueIdentifier, val newAmount: Int) : FlowLogic<Unit>() {
         override val progressTracker = ProgressTracker()
 
         @Suspendable
@@ -161,8 +161,8 @@ object ModificationFlowPair {
         }
     }
 
-    @InitiatedBy(ModifyProposal::class)
-    class ModifyProposalResponder(val counterpartySession: FlowSession) : FlowLogic<Unit>() {
+    @InitiatedBy(Initiator::class)
+    class Responder(val counterpartySession: FlowSession) : FlowLogic<Unit>() {
         @Suspendable
         override fun call() {
             subFlow(object : SignTransactionFlow(counterpartySession) {
