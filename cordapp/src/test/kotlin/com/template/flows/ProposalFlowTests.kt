@@ -19,7 +19,7 @@ class ProposalFlowTests: FlowTestsBase() {
         testProposalForRole(ProposalFlow.Role.Seller)
     }
 
-    fun testProposalForRole(role: ProposalFlow.Role) {
+    private fun testProposalForRole(role: ProposalFlow.Role) {
         val amount = 1
         val counterparty = b.info.chooseIdentity()
 

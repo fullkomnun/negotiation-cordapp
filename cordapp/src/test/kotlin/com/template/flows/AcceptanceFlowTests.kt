@@ -39,7 +39,7 @@ class AcceptanceFlowTests: FlowTestsBase() {
         assertEquals("Only the proposee can accept a proposal.", exceptionFromFlow.message)
     }
 
-    fun testAcceptanceForRole(role: ProposalFlow.Role) {
+    private fun testAcceptanceForRole(role: ProposalFlow.Role) {
         val amount = 1
         val counterparty = b.info.chooseIdentity()
 

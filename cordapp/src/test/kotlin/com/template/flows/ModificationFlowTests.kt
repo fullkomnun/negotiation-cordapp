@@ -40,7 +40,7 @@ class ModificationFlowTests: FlowTestsBase() {
         assertEquals("Only the proposee can modify a proposal.", exceptionFromFlow.message)
     }
 
-    fun testModificationForRole(role: ProposalFlow.Role) {
+    private fun testModificationForRole(role: ProposalFlow.Role) {
         val oldAmount = 1
         val newAmount = 2
         val counterparty = b.info.chooseIdentity()
