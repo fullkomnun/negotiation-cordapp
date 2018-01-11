@@ -47,13 +47,12 @@ abstract class FlowTestsBase {
         return future.get()
     }
 
-    fun nodeBAcceptsProposal(proposalId: UniqueIdentifier) = nodeAcceptsProposal(b, proposalId)
-
-    fun nodeAcceptsProposal(node: StartedNode<MockNode>, proposalId: UniqueIdentifier) {
+    fun nodeBAcceptsProposal(proposalId: UniqueIdentifier) {
         val flow = AcceptanceFlow.Initiator(proposalId)
-        val future = node.services.startFlow(flow).resultFuture
+        val future = b.services.startFlow(flow).resultFuture
         network.runNetwork()
         future.get()
+
     }
 
     fun nodeBModifiesProposal(proposalId: UniqueIdentifier, newAmount: Int) {

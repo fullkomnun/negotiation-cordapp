@@ -137,7 +137,8 @@ object ModificationFlow {
             val input = inputStateAndRef.state.data
 
             // Creating the output.
-            val counterparty = serviceHub.identityService.requireWellKnownPartyFromAnonymous(input.proposer)
+            val (wellKnownProposer, wellKnownProposee) = listOf(input.proposer, input.proposee).map { serviceHub.identityService.requireWellKnownPartyFromAnonymous(it) }
+            val counterparty = if (ourIdentity == wellKnownProposer) wellKnownProposee else wellKnownProposer
             val output = input.copy(amount = newAmount, proposer = ourIdentity, proposee = counterparty)
 
             // Creating the command.
