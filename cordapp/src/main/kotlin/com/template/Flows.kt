@@ -11,13 +11,17 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 
 object ProposalFlowPair {
+    enum class Role { Buyer, Seller }
+
     @InitiatingFlow
     @StartableByRPC
-    class ProposeTrade(val amount: Int, val counterparty: Party) : FlowLogic<Unit>() {
+    class ProposeTrade(val role: Role, val amount: Int, val counterparty: Party) : FlowLogic<Unit>() {
         @Suspendable
         override fun call() {
-            // TODO: Don't assume the initiator is always the buyer and the responder is always the seller.
-            val output = ProposalState(amount, ourIdentity, counterparty, ourIdentity, counterparty)
+            val output = when (role) {
+                Role.Buyer -> ProposalState(amount, ourIdentity, counterparty, ourIdentity, counterparty)
+                Role.Seller -> ProposalState(amount, counterparty, ourIdentity, ourIdentity, counterparty)
+            }
             val requiredSigners = listOf(ourIdentity.owningKey, counterparty.owningKey)
             val command = Command(ProposalAndTradeContract.Commands.Propose(), requiredSigners)
 

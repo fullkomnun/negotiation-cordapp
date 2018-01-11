@@ -27,10 +27,10 @@ open class ProposalAndTradeContract : Contract {
     }
 
     // Used to indicate the transaction's intent.
-    interface Commands : CommandData {
-        class Propose : Commands
-        class Accept : Commands
-        class Modify : Commands
+    sealed class Commands : TypeOnlyCommandData() {
+        class Propose : Commands()
+        class Accept : Commands()
+        class Modify : Commands()
     }
 }
 
