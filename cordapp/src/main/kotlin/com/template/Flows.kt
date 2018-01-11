@@ -16,11 +16,11 @@ object ProposalFlow {
 
     @InitiatingFlow
     @StartableByRPC
-    class Initiator(val role: Role, val amount: Int, val counterparty: Party) : FlowLogic<Unit>() {
+    class Initiator(val role: Role, val amount: Int, val counterparty: Party) : FlowLogic<UniqueIdentifier>() {
         override val progressTracker = ProgressTracker()
 
         @Suspendable
-        override fun call() {
+        override fun call(): UniqueIdentifier {
             // Creating the output.
             val (buyer, seller) = when (role) {
                 Role.Buyer -> ourIdentity to counterparty
@@ -47,7 +47,8 @@ object ProposalFlow {
             val fullyStx = subFlow(CollectSignaturesFlow(partStx, listOf(counterpartySession)))
 
             // Finalising the transaction.
-            subFlow(FinalityFlow(fullyStx))
+            val finalisedTx = subFlow(FinalityFlow(fullyStx))
+            return finalisedTx.tx.outputsOfType<ProposalState>().single().linearId
         }
     }
 

@@ -1,6 +1,7 @@
 package com.template
 
 import net.corda.core.contracts.UniqueIdentifier
+import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.Party
 import net.corda.node.internal.StartedNode
 import net.corda.testing.node.MockNetwork
@@ -38,11 +39,11 @@ abstract class FlowTestsBase {
         unsetCordappPackages()
     }
 
-    fun nodeACreatesProposal(role: ProposalFlow.Role, amount: Int, counterparty: Party) {
+    fun nodeACreatesProposal(role: ProposalFlow.Role, amount: Int, counterparty: Party): UniqueIdentifier {
         val flow = ProposalFlow.Initiator(role, amount, counterparty)
         val future = a.services.startFlow(flow).resultFuture
         network.runNetwork()
-        future.get()
+        return future.get()
     }
 
     fun nodeBAcceptsProposal(proposalId: UniqueIdentifier) {
