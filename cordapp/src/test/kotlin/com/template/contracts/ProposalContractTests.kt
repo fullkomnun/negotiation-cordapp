@@ -1,5 +1,7 @@
-package com.template
+package com.template.contracts
 
+import com.template.ProposalAndTradeContract
+import com.template.ProposalState
 import net.corda.core.crypto.SecureHash
 import net.corda.testing.*
 import net.corda.testing.contracts.DUMMY_PROGRAM_ID
@@ -9,7 +11,7 @@ import org.junit.Before
 import org.junit.Test
 import java.time.Instant
 
-class ContractTests {
+class ProposalContractTests {
 
     @Before
     fun setup() {
