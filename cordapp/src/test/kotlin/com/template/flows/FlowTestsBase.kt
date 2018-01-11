@@ -1,11 +1,12 @@
-package com.template
+package com.template.flows
 
+import com.template.AcceptanceFlow
+import com.template.ModificationFlow
+import com.template.ProposalFlow
 import net.corda.core.contracts.UniqueIdentifier
-import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.Party
 import net.corda.node.internal.StartedNode
 import net.corda.testing.node.MockNetwork
-import net.corda.testing.node.MockNetwork.MockNode
 import net.corda.testing.setCordappPackages
 import net.corda.testing.unsetCordappPackages
 import org.junit.After
