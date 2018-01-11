@@ -1,7 +1,7 @@
-package com.template.contracts
+package com.negotiation.contracts
 
-import com.template.ProposalAndTradeContract
-import com.template.ProposalState
+import com.negotiation.ProposalAndTradeContract
+import com.negotiation.ProposalState
 import net.corda.testing.*
 import net.corda.testing.contracts.DUMMY_PROGRAM_ID
 import net.corda.testing.contracts.DummyState
@@ -14,7 +14,7 @@ class ProposalContractTests {
 
     @Before
     fun setup() {
-        setCordappPackages("com.template")
+        setCordappPackages("com.negotiation")
     }
 
     @After

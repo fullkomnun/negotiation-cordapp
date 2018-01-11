@@ -1,4 +1,4 @@
-package com.template
+package com.negotiation
 
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.utilities.getOrThrow
@@ -13,7 +13,7 @@ import net.corda.testing.driver.driver
  *
  * To debug your CorDapp:
  *
- * 1. Run the "Run Template CorDapp" run configuration.
+ * 1. Run the "Run Negotiation CorDapp" run configuration.
  * 2. Wait for all the nodes to start.
  * 3. Note the debug ports for each node, which should be output to the console. The "Debug CorDapp" configuration runs
  *    with port 5007, which should be "PartyA". In any case, double-check the console output to be sure.

@@ -1,4 +1,4 @@
-package com.template
+package com.negotiation
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.contracts.Command

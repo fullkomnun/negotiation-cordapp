@@ -1,4 +1,4 @@
-package com.template
+package com.negotiation
 
 import net.corda.core.contracts.*
 import net.corda.core.identity.AbstractParty
@@ -6,7 +6,7 @@ import net.corda.core.transactions.LedgerTransaction
 
 open class ProposalAndTradeContract : Contract {
     companion object {
-        val ID = "com.template.ProposalAndTradeContract"
+        val ID = "com.negotiation.ProposalAndTradeContract"
     }
 
     // A transaction is considered valid if the verify() function of the contract of each of the transaction's input

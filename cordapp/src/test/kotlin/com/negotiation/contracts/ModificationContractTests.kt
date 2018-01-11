@@ -1,15 +1,15 @@
-package com.template.contracts
+package com.negotiation.contracts
 
 import net.corda.testing.setCordappPackages
 import net.corda.testing.unsetCordappPackages
 import org.junit.After
 import org.junit.Before
 
-class AcceptanceContractTests {
+class ModificationContractTests {
 
     @Before
     fun setup() {
-        setCordappPackages("com.template")
+        setCordappPackages("com.negotiation")
     }
 
     @After

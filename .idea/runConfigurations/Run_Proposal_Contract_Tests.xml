@@ -4,8 +4,8 @@
     <module name="cordapp_test" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" />
-    <option name="PACKAGE_NAME" value="com.template.contracts" />
-    <option name="MAIN_CLASS_NAME" value="com.template.contracts.ProposalContractTests" />
+    <option name="PACKAGE_NAME" value="com.negotiation.contracts" />
+    <option name="MAIN_CLASS_NAME" value="com.negotiation.contracts.ProposalContractTests" />
     <option name="METHOD_NAME" value="" />
     <option name="TEST_OBJECT" value="class" />
     <option name="VM_PARAMETERS" value="-ea" />

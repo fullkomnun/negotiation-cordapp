@@ -1,8 +1,8 @@
-package com.template.flows
+package com.negotiation.flows
 
-import com.template.ModificationFlow
-import com.template.ProposalFlow
-import com.template.ProposalState
+import com.negotiation.ModificationFlow
+import com.negotiation.ProposalFlow
+import com.negotiation.ProposalState
 import net.corda.core.flows.FlowException
 import net.corda.core.node.services.queryBy
 import net.corda.testing.chooseIdentity

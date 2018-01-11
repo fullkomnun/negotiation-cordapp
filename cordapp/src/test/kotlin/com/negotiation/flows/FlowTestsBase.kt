@@ -1,8 +1,8 @@
-package com.template.flows
+package com.negotiation.flows
 
-import com.template.AcceptanceFlow
-import com.template.ModificationFlow
-import com.template.ProposalFlow
+import com.negotiation.AcceptanceFlow
+import com.negotiation.ModificationFlow
+import com.negotiation.ProposalFlow
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.identity.Party
 import net.corda.node.internal.StartedNode
@@ -19,7 +19,7 @@ abstract class FlowTestsBase {
 
     @Before
     fun setup() {
-        setCordappPackages("com.template")
+        setCordappPackages("com.negotiation")
         network = MockNetwork()
         val nodes = network.createSomeNodes(2)
         a = nodes.partyNodes[0]

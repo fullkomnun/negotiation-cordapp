@@ -136,9 +136,3 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         rpcUsers = [[ user: "user1", "password": "test", "permissions": []]]
     }
 }
-
-task runTemplateClient(type: JavaExec) {
-    classpath = sourceSets.main.runtimeClasspath
-    main = 'com.template.ClientKt'
-    args 'localhost:10006'
-}
