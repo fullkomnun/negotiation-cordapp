@@ -31,8 +31,8 @@ class AcceptanceFlowTests: FlowTestsBase() {
         val exceptionFromFlow = assertFailsWith<ExecutionException> {
             future.get()
         }.cause!!
-        assertEquals(exceptionFromFlow::class, FlowException::class)
-        assertEquals(exceptionFromFlow.message, "Only the proposee can accept a proposal.")
+        assertEquals(FlowException::class, exceptionFromFlow::class)
+        assertEquals("Only the proposee can accept a proposal.", exceptionFromFlow.message)
     }
 
     fun testAcceptanceForRole(role: ProposalFlow.Role) {
