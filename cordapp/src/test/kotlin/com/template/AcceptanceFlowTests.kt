@@ -1,9 +1,12 @@
 package com.template
 
+import net.corda.core.flows.FlowException
 import net.corda.core.node.services.queryBy
 import net.corda.testing.chooseIdentity
 import org.junit.Test
+import java.util.concurrent.ExecutionException
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class AcceptanceFlowTests: FlowTestsBase() {
     @Test
@@ -16,12 +19,27 @@ class AcceptanceFlowTests: FlowTestsBase() {
         testAcceptanceForRole(ProposalFlow.Role.Buyer)
     }
 
+    @Test
+    fun `acceptance flow throws an error is the proposer tries to accept the proposal`() {
+        val amount = 1
+        val counterparty = b.info.chooseIdentity()
+        val proposalId = nodeACreatesProposal(ProposalFlow.Role.Buyer, amount, counterparty)
+
+        val flow = AcceptanceFlow.Initiator(proposalId)
+        val future = a.services.startFlow(flow).resultFuture
+        network.runNetwork()
+        val exceptionFromFlow = assertFailsWith<ExecutionException> {
+            future.get()
+        }.cause!!
+        assertEquals(exceptionFromFlow::class, FlowException::class)
+        assertEquals(exceptionFromFlow.message, "Only the proposee can accept a proposal.")
+    }
+
     fun testAcceptanceForRole(role: ProposalFlow.Role) {
         val amount = 1
         val counterparty = b.info.chooseIdentity()
 
         val proposalId = nodeACreatesProposal(role, amount, counterparty)
-
         nodeBAcceptsProposal(proposalId)
 
         for (node in listOf(a, b)) {

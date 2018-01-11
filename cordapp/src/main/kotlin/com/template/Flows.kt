@@ -96,7 +96,8 @@ object AcceptanceFlow {
             val partStx = serviceHub.signInitialTransaction(txBuilder)
 
             // Gathering the counterparty's signature.
-            val counterparty = serviceHub.identityService.requireWellKnownPartyFromAnonymous(input.proposer)
+            val (wellKnownProposer, wellKnownProposee) = listOf(input.proposer, input.proposee).map { serviceHub.identityService.requireWellKnownPartyFromAnonymous(it) }
+            val counterparty = if (ourIdentity == wellKnownProposer) wellKnownProposee else wellKnownProposer
             val counterpartySession = initiateFlow(counterparty)
             val fullyStx = subFlow(CollectSignaturesFlow(partStx, listOf(counterpartySession)))
 

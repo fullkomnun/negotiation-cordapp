@@ -5,6 +5,7 @@ import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.Party
 import net.corda.node.internal.StartedNode
 import net.corda.testing.node.MockNetwork
+import net.corda.testing.node.MockNetwork.MockNode
 import net.corda.testing.setCordappPackages
 import net.corda.testing.unsetCordappPackages
 import org.junit.After
@@ -46,9 +47,11 @@ abstract class FlowTestsBase {
         return future.get()
     }
 
-    fun nodeBAcceptsProposal(proposalId: UniqueIdentifier) {
+    fun nodeBAcceptsProposal(proposalId: UniqueIdentifier) = nodeAcceptsProposal(b, proposalId)
+
+    fun nodeAcceptsProposal(node: StartedNode<MockNode>, proposalId: UniqueIdentifier) {
         val flow = AcceptanceFlow.Initiator(proposalId)
-        val future = b.services.startFlow(flow).resultFuture
+        val future = node.services.startFlow(flow).resultFuture
         network.runNetwork()
         future.get()
     }
