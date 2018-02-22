@@ -2,42 +2,38 @@ package com.negotiation.contracts
 
 import com.negotiation.ProposalAndTradeContract
 import com.negotiation.ProposalState
-import net.corda.testing.*
-import net.corda.testing.contracts.DUMMY_PROGRAM_ID
+import net.corda.core.identity.CordaX500Name
+import net.corda.testing.contracts.DummyContract
 import net.corda.testing.contracts.DummyState
-import org.junit.After
-import org.junit.Before
+import net.corda.testing.core.DummyCommandData
+import net.corda.testing.core.TestIdentity
+import net.corda.testing.node.MockServices
+import net.corda.testing.node.ledger
 import org.junit.Test
 import java.time.Instant
 
 class ProposalContractTests {
-
-    @Before
-    fun setup() {
-        setCordappPackages("com.negotiation")
-    }
-
-    @After
-    fun tearDown() {
-        unsetCordappPackages()
-    }
+    private val ledgerServices = MockServices(listOf("com.negotiation", "net.corda.testing.contracts"))
+    private val alice = TestIdentity(CordaX500Name("alice", "New York", "US"))
+    private val bob = TestIdentity(CordaX500Name("bob", "Tokyo", "JP"))
+    private val charlie = TestIdentity(CordaX500Name("charlie", "London", "GB"))
 
     @Test
     fun `proposal transactions have exactly one output of type ProposalState`() {
-        ledger {
+        ledgerServices.ledger {
             transaction {
-                command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
+                command(listOf(alice.publicKey, bob.publicKey), ProposalAndTradeContract.Commands.Propose())
                 fails()
                 tweak {
-                    output(DUMMY_PROGRAM_ID) { DummyState() }
+                    output(ProposalAndTradeContract.ID, DummyState())
                     fails()
                 }
                 tweak {
-                    output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
-                    output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
+                    output(ProposalAndTradeContract.ID, ProposalState(1, alice.party, bob.party, alice.party, bob.party))
+                    output(ProposalAndTradeContract.ID, ProposalState(1, alice.party, bob.party, alice.party, bob.party))
                     fails()
                 }
-                output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
+                output(ProposalAndTradeContract.ID, ProposalState(1, alice.party, bob.party, alice.party, bob.party))
                 verifies()
             }
         }
@@ -45,19 +41,19 @@ class ProposalContractTests {
 
     @Test
     fun `proposal transactions have exactly one command of type Propose`() {
-        ledger {
+        ledgerServices.ledger {
             transaction {
-                output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
+                output(ProposalAndTradeContract.ID, ProposalState(1, alice.party, bob.party, alice.party, bob.party))
                 tweak {
-                    command(ALICE_PUBKEY, BOB_PUBKEY) { DummyCommandData }
+                    command(listOf(alice.publicKey, bob.publicKey), DummyCommandData)
                     fails()
                 }
                 tweak {
-                    command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
-                    command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
+                    command(listOf(alice.publicKey, bob.publicKey), ProposalAndTradeContract.Commands.Propose())
+                    command(listOf(alice.publicKey, bob.publicKey), ProposalAndTradeContract.Commands.Propose())
                     fails()
                 }
-                command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
+                command(listOf(alice.publicKey, bob.publicKey), ProposalAndTradeContract.Commands.Propose())
                 verifies()
             }
         }
@@ -65,18 +61,18 @@ class ProposalContractTests {
 
     @Test
     fun `proposal transactions have two required signers - the proposer and the proposee`() {
-        ledger {
+        ledgerServices.ledger {
             transaction {
-                output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
+                output(ProposalAndTradeContract.ID, ProposalState(1, alice.party, bob.party, alice.party, bob.party))
                 tweak {
-                    command(ALICE_PUBKEY, CHARLIE_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
+                    command(listOf(alice.publicKey, charlie.publicKey), ProposalAndTradeContract.Commands.Propose())
                     fails()
                 }
                 tweak {
-                    command(CHARLIE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
+                    command(listOf(charlie.publicKey, bob.publicKey), ProposalAndTradeContract.Commands.Propose())
                     fails()
                 }
-                command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
+                command(listOf(alice.publicKey, bob.publicKey), ProposalAndTradeContract.Commands.Propose())
                 verifies()
             }
         }
@@ -84,23 +80,23 @@ class ProposalContractTests {
 
     @Test
     fun `in proposal transactions, the proposer and proposee are the buyer and seller`() {
-        ledger {
+        ledgerServices.ledger {
             transaction {
-                command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
+                command(listOf(alice.publicKey, bob.publicKey), ProposalAndTradeContract.Commands.Propose())
                 tweak {
                     // Order reversed - buyer = proposee, seller = proposer
-                    output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, BOB, ALICE) }
+                    output(ProposalAndTradeContract.ID, ProposalState(1, alice.party, bob.party, bob.party, alice.party))
                     verifies()
                 }
                 tweak {
-                    output(ProposalAndTradeContract.ID) { ProposalState(1, CHARLIE, BOB, ALICE, BOB) }
+                    output(ProposalAndTradeContract.ID, ProposalState(1, charlie.party, bob.party, alice.party, bob.party))
                     fails()
                 }
                 tweak {
-                    output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, CHARLIE, ALICE, BOB) }
+                    output(ProposalAndTradeContract.ID, ProposalState(1, alice.party, charlie.party, alice.party, bob.party))
                     fails()
                 }
-                output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
+                output(ProposalAndTradeContract.ID, ProposalState(1, alice.party, bob.party, alice.party, bob.party))
                 verifies()
             }
         }
@@ -108,12 +104,12 @@ class ProposalContractTests {
 
     @Test
     fun `proposal transactions have no inputs and no timestamp`() {
-        ledger {
+        ledgerServices.ledger {
             transaction {
-                output(ProposalAndTradeContract.ID) { ProposalState(1, ALICE, BOB, ALICE, BOB) }
-                command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
+                output(ProposalAndTradeContract.ID, ProposalState(1, alice.party, bob.party, alice.party, bob.party))
+                command(listOf(alice.publicKey, bob.publicKey), ProposalAndTradeContract.Commands.Propose())
                 tweak {
-                    input(DUMMY_PROGRAM_ID) { DummyState() }
+                    input(DummyContract.PROGRAM_ID, DummyState())
                     fails()
                 }
                 tweak {
