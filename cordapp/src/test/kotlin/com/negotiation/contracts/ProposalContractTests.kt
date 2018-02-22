@@ -29,7 +29,7 @@ class ProposalContractTests {
                 command(ALICE_PUBKEY, BOB_PUBKEY) { ProposalAndTradeContract.Commands.Propose() }
                 fails()
                 tweak {
-                    output(DUMMY_PROGRAM_ID) { DummyState() }
+                    output(ProposalAndTradeContract.ID) { DummyState() }
                     fails()
                 }
                 tweak {
