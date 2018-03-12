@@ -6,8 +6,7 @@ import com.negotiation.ProposalState
 import com.negotiation.TradeState
 import net.corda.core.flows.FlowException
 import net.corda.core.node.services.queryBy
-import net.corda.testing.core.chooseIdentity
-import net.corda.testing.node.startFlow
+import net.corda.testing.internal.chooseIdentity
 import org.junit.Test
 import java.util.concurrent.ExecutionException
 import kotlin.test.assertEquals
@@ -31,7 +30,7 @@ class AcceptanceFlowTests: FlowTestsBase() {
         val proposalId = nodeACreatesProposal(ProposalFlow.Role.Buyer, amount, counterparty)
 
         val flow = AcceptanceFlow.Initiator(proposalId)
-        val future = a.services.startFlow(flow)
+        val future = a.startFlow(flow)
         network.runNetwork()
         val exceptionFromFlow = assertFailsWith<ExecutionException> {
             future.get()
@@ -48,7 +47,7 @@ class AcceptanceFlowTests: FlowTestsBase() {
         nodeBAcceptsProposal(proposalId)
 
         for (node in listOf(a, b)) {
-            node.services.database.transaction {
+            node.transaction {
                 val proposals = node.services.vaultService.queryBy<ProposalState>().states
                 assertEquals(0, proposals.size)
 

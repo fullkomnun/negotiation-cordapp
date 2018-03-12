@@ -3,7 +3,7 @@ package com.negotiation.flows
 import com.negotiation.ProposalFlow
 import com.negotiation.ProposalState
 import net.corda.core.node.services.queryBy
-import net.corda.testing.core.chooseIdentity
+import net.corda.testing.internal.chooseIdentity
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -26,7 +26,7 @@ class ProposalFlowTests: FlowTestsBase() {
         nodeACreatesProposal(role, amount, counterparty)
 
         for (node in listOf(a, b)) {
-            node.services.database.transaction {
+            node.transaction {
                 val proposals = node.services.vaultService.queryBy<ProposalState>().states
                 assertEquals(1, proposals.size)
                 val proposal = proposals.single().state.data

@@ -7,7 +7,6 @@ import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.identity.Party
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.StartedMockNode
-import net.corda.testing.node.startFlow
 import org.junit.After
 import org.junit.Before
 
@@ -39,14 +38,14 @@ abstract class FlowTestsBase {
 
     fun nodeACreatesProposal(role: ProposalFlow.Role, amount: Int, counterparty: Party): UniqueIdentifier {
         val flow = ProposalFlow.Initiator(role, amount, counterparty)
-        val future = a.services.startFlow(flow)
+        val future = a.startFlow(flow)
         network.runNetwork()
         return future.get()
     }
 
     fun nodeBAcceptsProposal(proposalId: UniqueIdentifier) {
         val flow = AcceptanceFlow.Initiator(proposalId)
-        val future = b.services.startFlow(flow)
+        val future = b.startFlow(flow)
         network.runNetwork()
         future.get()
 
@@ -54,7 +53,7 @@ abstract class FlowTestsBase {
 
     fun nodeBModifiesProposal(proposalId: UniqueIdentifier, newAmount: Int) {
         val flow = ModificationFlow.Initiator(proposalId, newAmount)
-        val future = b.services.startFlow(flow)
+        val future = b.startFlow(flow)
         network.runNetwork()
         future.get()
     }
