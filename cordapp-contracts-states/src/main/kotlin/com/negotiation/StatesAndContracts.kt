@@ -31,10 +31,32 @@ open class ProposalAndTradeContract : Contract {
                 "There is no timestamp" using (tx.timeWindow == null)
             }
             is Commands.Accept -> requireThat {
-                // TODO: Add contractual logic.
+                val input = tx.inputsOfType<ProposalState>().single()
+                val output = tx.outputsOfType<TradeState>().single()
+                "There is exactly one output" using (tx.outputStates.size == 1)
+                "There is exactly one input" using (tx.inputStates.size == 1)
+
+                "The amount should be same after accepting the proposal" using (output.amount == input.amount)
+
+                "The proposer is a required signer" using (cmd.signers.contains(input.proposer.owningKey))
+                "The proposee is a required signer" using (cmd.signers.contains(input.proposee.owningKey))
+
+                "The buyer is a required signer" using (cmd.signers.contains(output.buyer.owningKey))
+                "The seller is a required signer" using (cmd.signers.contains(output.seller.owningKey))
             }
             is Commands.Modify -> requireThat {
-                // TODO: Add contractual logic.
+                val output = tx.outputsOfType<ProposalState>().single()
+                val input = tx.inputsOfType<ProposalState>().single()
+                "There is exactly one output" using (tx.outputStates.size == 1)
+                "There is exactly one input" using (tx.inputStates.size == 1)
+                "The new amount and old amount should not be same" using (output.amount != input.amount)
+
+                "The proposer is a required signer" using (cmd.signers.contains(input.proposer.owningKey))
+                "The proposee is a required signer" using (cmd.signers.contains(input.proposee.owningKey))
+
+                "The proposer is a required signer" using (cmd.signers.contains(output.proposer.owningKey))
+                "The proposee is a required signer" using (cmd.signers.contains(output.proposee.owningKey))
+
             }
         }
     }
