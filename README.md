@@ -35,7 +35,3 @@ Use the IntelliJ run configurations provided:
 Use the IntelliJ run configuration provided:
 
 * `Run Proposal Contract Tests`
-
-# To-Do
-
-* Write the contract logic and contract tests for the acceptance and modification of proposals
