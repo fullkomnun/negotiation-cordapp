@@ -64,8 +64,6 @@ class AcceptanceContractTests {
         }
     }
 
-
-
     @Test
     fun `transactions have two required signers - the proposer and the proposee`() {
         ledgerServices.ledger {
@@ -109,6 +107,4 @@ class AcceptanceContractTests {
             }
         }
     }
-
-
 }

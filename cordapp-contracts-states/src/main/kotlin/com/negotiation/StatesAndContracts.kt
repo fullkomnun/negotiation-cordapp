@@ -30,9 +30,11 @@ open class ProposalAndTradeContract : Contract {
                 "There are zero input states" using (tx.inputStates.isEmpty())
                 "There is no timestamp" using (tx.timeWindow == null)
             }
+
             is Commands.Accept -> requireThat {
                 val input = tx.inputsOfType<ProposalState>().single()
                 val output = tx.outputsOfType<TradeState>().single()
+
                 "There is exactly one output" using (tx.outputStates.size == 1)
                 "There is exactly one input" using (tx.inputStates.size == 1)
 
@@ -43,9 +45,11 @@ open class ProposalAndTradeContract : Contract {
                 "The proposer is a required signer" using (cmd.signers.contains(input.proposer.owningKey))
                 "The proposee is a required signer" using (cmd.signers.contains(input.proposee.owningKey))
             }
+
             is Commands.Modify -> requireThat {
                 val output = tx.outputsOfType<ProposalState>().single()
                 val input = tx.inputsOfType<ProposalState>().single()
+
                 "There is exactly one output" using (tx.outputStates.size == 1)
                 "There is exactly one input" using (tx.inputStates.size == 1)
                 "The new amount and old amount should not be same" using (output.amount != input.amount)
@@ -57,7 +61,6 @@ open class ProposalAndTradeContract : Contract {
                 "The proposee is a required signer in the output" using (cmd.signers.contains(output.proposee.owningKey))
 
                 "The buyer and seller are unmodified in the output" using (input.buyer == output.buyer && input.seller == output.seller)
-
             }
         }
     }
