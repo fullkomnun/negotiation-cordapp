@@ -17,7 +17,7 @@ class AcceptanceContractTests {
     private val charlie = TestIdentity(CordaX500Name("charlie", "London", "GB"))
 
     @Test
-    fun `proposal and trade should have exactly same ammounts`() {
+    fun `proposal and trade should have exactly same amounts`() {
         ledgerServices.ledger{
             transaction {
                 command(listOf(alice.publicKey, bob.publicKey), ProposalAndTradeContract.Commands.Accept())
@@ -41,7 +41,7 @@ class AcceptanceContractTests {
     }
 
     @Test
-    fun `transactions have only one input proposalState and one output TradeState`() {
+    fun `transactions have only one input ProposalState and one output TradeState`() {
         ledgerServices.ledger{
             transaction {
 
@@ -85,5 +85,30 @@ class AcceptanceContractTests {
             }
         }
     }
+
+    @Test
+    fun `The buyer and seller are unmodified in the output`() {
+        ledgerServices.ledger {
+            transaction {
+                input(ProposalAndTradeContract.ID,ProposalState(1, alice.party, bob.party, alice.party, bob.party))
+                output(ProposalAndTradeContract.ID, TradeState(1,alice.party,bob.party))
+                command(listOf(alice.publicKey, bob.publicKey), ProposalAndTradeContract.Commands.Accept())
+                tweak {
+                    output(ProposalAndTradeContract.ID, TradeState(1,alice.party, charlie.party))
+                    fails()
+                }
+                tweak {
+                    output(ProposalAndTradeContract.ID, TradeState(1,charlie.party, bob.party))
+                    fails()
+                }
+                tweak {
+                    output(ProposalAndTradeContract.ID, TradeState(1,bob.party, bob.party))
+                    fails()
+                }
+                verifies()
+            }
+        }
+    }
+
 
 }

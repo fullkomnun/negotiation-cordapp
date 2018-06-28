@@ -38,11 +38,10 @@ open class ProposalAndTradeContract : Contract {
 
                 "The amount should be same after accepting the proposal" using (output.amount == input.amount)
 
+                "The buyer and seller are unmodified in the output" using (input.buyer == output.buyer && input.seller == output.seller)
+
                 "The proposer is a required signer" using (cmd.signers.contains(input.proposer.owningKey))
                 "The proposee is a required signer" using (cmd.signers.contains(input.proposee.owningKey))
-
-                "The buyer is a required signer" using (cmd.signers.contains(output.buyer.owningKey))
-                "The seller is a required signer" using (cmd.signers.contains(output.seller.owningKey))
             }
             is Commands.Modify -> requireThat {
                 val output = tx.outputsOfType<ProposalState>().single()
@@ -51,11 +50,13 @@ open class ProposalAndTradeContract : Contract {
                 "There is exactly one input" using (tx.inputStates.size == 1)
                 "The new amount and old amount should not be same" using (output.amount != input.amount)
 
-                "The proposer is a required signer" using (cmd.signers.contains(input.proposer.owningKey))
-                "The proposee is a required signer" using (cmd.signers.contains(input.proposee.owningKey))
+                "The proposer is a required signer in the input" using (cmd.signers.contains(input.proposer.owningKey))
+                "The proposee is a required signer in the input" using (cmd.signers.contains(input.proposee.owningKey))
 
-                "The proposer is a required signer" using (cmd.signers.contains(output.proposer.owningKey))
-                "The proposee is a required signer" using (cmd.signers.contains(output.proposee.owningKey))
+                "The proposer is a required signer in the output" using (cmd.signers.contains(output.proposer.owningKey))
+                "The proposee is a required signer in the output" using (cmd.signers.contains(output.proposee.owningKey))
+
+                "The buyer and seller are unmodified in the output" using (input.buyer == output.buyer && input.seller == output.seller)
 
             }
         }
