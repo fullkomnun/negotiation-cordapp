@@ -30,7 +30,6 @@ open class ProposalAndTradeContract : Contract {
                 "There are zero input states" using (tx.inputStates.isEmpty())
                 "There is no timestamp" using (tx.timeWindow == null)
             }
-
             is Commands.Accept -> requireThat {
                 val input = tx.inputsOfType<ProposalState>().single()
                 val output = tx.outputsOfType<TradeState>().single()
@@ -38,29 +37,42 @@ open class ProposalAndTradeContract : Contract {
                 "There is exactly one output" using (tx.outputStates.size == 1)
                 "There is exactly one input" using (tx.inputStates.size == 1)
 
-                "The amount should be same after accepting the proposal" using (output.amount == input.amount)
+                "The single input is of type ProposalState" using (tx.inputsOfType<ProposalState>().size == 1)
+                "The single output is of type TradeState" using (tx.outputsOfType<TradeState>().size == 1)
 
-                "The buyer and seller are unmodified in the output" using (input.buyer == output.buyer && input.seller == output.seller)
+                "There is exactly one command" using (tx.commands.size == 1)
+
+                "The amount is unmodified in the output" using (output.amount == input.amount)
+
+                "The buyer is unmodified in the output" using (input.buyer == output.buyer)
+                "The seller is unmodified in the output" using (input.seller == output.seller)
 
                 "The proposer is a required signer" using (cmd.signers.contains(input.proposer.owningKey))
                 "The proposee is a required signer" using (cmd.signers.contains(input.proposee.owningKey))
-            }
 
+                "There is no timestamp" using (tx.timeWindow == null)
+            }
             is Commands.Modify -> requireThat {
                 val output = tx.outputsOfType<ProposalState>().single()
                 val input = tx.inputsOfType<ProposalState>().single()
 
                 "There is exactly one output" using (tx.outputStates.size == 1)
                 "There is exactly one input" using (tx.inputStates.size == 1)
+
+                "The single input is of type ProposalState" using (tx.inputsOfType<ProposalState>().size == 1)
+                "The single output is of type ProposalState" using (tx.outputsOfType<ProposalState>().size == 1)
+
+                "There is exactly one command" using (tx.commands.size == 1)
+
                 "The new amount and old amount should not be same" using (output.amount != input.amount)
 
-                "The proposer is a required signer in the input" using (cmd.signers.contains(input.proposer.owningKey))
-                "The proposee is a required signer in the input" using (cmd.signers.contains(input.proposee.owningKey))
+                "The proposer is a required signer" using (cmd.signers.contains(output.proposer.owningKey))
+                "The proposee is a required signer" using (cmd.signers.contains(output.proposee.owningKey))
 
-                "The proposer is a required signer in the output" using (cmd.signers.contains(output.proposer.owningKey))
-                "The proposee is a required signer in the output" using (cmd.signers.contains(output.proposee.owningKey))
+                "The buyer is unmodified in the output" using (input.buyer == output.buyer)
+                "The seller is unmodified in the output" using (input.seller == output.seller)
 
-                "The buyer and seller are unmodified in the output" using (input.buyer == output.buyer && input.seller == output.seller)
+                "There is no timestamp" using (tx.timeWindow == null)
             }
         }
     }
