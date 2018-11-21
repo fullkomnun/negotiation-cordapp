@@ -2,7 +2,7 @@ package com.negotiation.flows
 
 import com.negotiation.AcceptanceFlow
 import com.negotiation.ModificationFlow
-import com.negotiation.ProposalFlow
+import com.negotiation.MatchFlow
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.identity.Party
 import net.corda.testing.node.MockNetwork
@@ -21,7 +21,7 @@ abstract class FlowTestsBase {
         a = network.createPartyNode()
         b = network.createPartyNode()
 
-        val responseFlows = listOf(ProposalFlow.Responder::class.java, AcceptanceFlow.Responder::class.java, ModificationFlow.Responder::class.java)
+        val responseFlows = listOf(MatchFlow.Responder::class.java, MatchProposalFlow.Responder::class.java, ModificationFlow.Responder::class.java)
         listOf(a, b).forEach {
             for (flow in responseFlows) {
                 it.registerInitiatedFlow(flow)
@@ -36,15 +36,15 @@ abstract class FlowTestsBase {
         network.stopNodes()
     }
 
-    fun nodeACreatesProposal(role: ProposalFlow.Role, amount: Int, counterparty: Party): UniqueIdentifier {
-        val flow = ProposalFlow.Initiator(role, amount, counterparty)
+    fun nodeACreatesProposal(role: MatchFlow.Role, amount: Int, counterparty: Party): UniqueIdentifier {
+        val flow = MatchFlow.Initiator(role, amount, counterparty)
         val future = a.startFlow(flow)
         network.runNetwork()
         return future.get()
     }
 
     fun nodeBAcceptsProposal(proposalId: UniqueIdentifier) {
-        val flow = AcceptanceFlow.Initiator(proposalId)
+        val flow = MatchProposalFlow.Initiator(proposalId)
         val future = b.startFlow(flow)
         network.runNetwork()
         future.get()

@@ -3,6 +3,7 @@ package com.negotiation
 import net.corda.core.contracts.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.transactions.LedgerTransaction
+import java.math.BigDecimal
 
 open class ProposalAndTradeContract : Contract {
     companion object {
@@ -22,13 +23,16 @@ open class ProposalAndTradeContract : Contract {
                 "There is no timestamp" using (tx.timeWindow == null)
 
                 val output = tx.outputsOfType<ProposalState>().single()
-                "The buyer and seller are the proposer and the proposee" using (setOf(output.buyer, output.seller) == setOf(output.proposer, output.proposee))
+                "The buyer and seller are the proposer and the proposee" using (setOf(
+                    output.buyer,
+                    output.seller
+                ) == setOf(output.proposer, output.proposee))
 
                 "The proposer is a required signer" using (cmd.signers.contains(output.proposer.owningKey))
                 "The proposee is a required signer" using (cmd.signers.contains(output.proposee.owningKey))
             }
 
-            is Commands.Accept -> requireThat {
+            is Commands.MatchProposal -> requireThat {
                 "There is exactly one input" using (tx.inputStates.size == 1)
                 "The single input is of type ProposalState" using (tx.inputsOfType<ProposalState>().size == 1)
                 "There is exactly one output" using (tx.outputStates.size == 1)
@@ -71,25 +75,47 @@ open class ProposalAndTradeContract : Contract {
     // Used to indicate the transaction's intent.
     sealed class Commands : TypeOnlyCommandData() {
         class Propose : Commands()
-        class Accept : Commands()
+        class MatchProposal : Commands()
         class Modify : Commands()
     }
 }
 
+sealed class NegotiationState: LinearState {
+    data class Attributes(val amount: BigDecimal)
+}
+
 data class ProposalState(
-        val amount: Int,
-        val buyer: AbstractParty,
-        val seller: AbstractParty,
-        val proposer: AbstractParty,
-        val proposee: AbstractParty,
-        override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
+    val id: String,
+    val buyer: AbstractParty,
+    val seller: AbstractParty,
+    val proposer: AbstractParty,
+    val proposee: AbstractParty,
+    val buyerAttributesHash: String? = null,
+    val sellerAttributesHash: String? = null
+) : NegotiationState() {
+    override val linearId: UniqueIdentifier = UniqueIdentifier(externalId = id)
+    override val participants = listOf(proposer, proposee)
+}
+
+data class ProposalMismatchState(
+    val id: String,
+    val buyer: AbstractParty,
+    val seller: AbstractParty,
+    val proposer: AbstractParty,
+    val proposee: AbstractParty,
+    val buyerAttributesHash: Attributes,
+    val sellerAttributesHash: Attributes
+) : NegotiationState() {
+    override val linearId: UniqueIdentifier = UniqueIdentifier(externalId = id)
     override val participants = listOf(proposer, proposee)
 }
 
 data class TradeState(
-        val amount: Int,
-        val buyer: AbstractParty,
-        val seller: AbstractParty,
-        override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
+    val id: String,
+    val buyer: AbstractParty,
+    val seller: AbstractParty,
+    val attributes: Attributes
+) : NegotiationState() {
+    override val linearId: UniqueIdentifier = UniqueIdentifier(externalId = id)
     override val participants = listOf(buyer, seller)
 }
