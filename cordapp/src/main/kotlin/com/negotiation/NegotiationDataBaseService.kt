@@ -1,8 +1,8 @@
 package com.negotiation
 
+import com.negotiation.NegotiationState.Attributes
 import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.CordaService
-import java.math.BigDecimal
 
 /**
  * A database service subclass for handling a table of proposals.
@@ -18,10 +18,13 @@ class NegotiationDataBaseService(services: ServiceHub) : DatabaseService(service
     /**
      * Adds a proposal to the table of proposals.
      */
-    fun addProposal(id: String, amount: BigDecimal) {
+    fun addProposal(
+        id: String,
+        attributes: Attributes
+    ) {
         val query = "insert into $TABLE_NAME values(?, ?)"
 
-        val params = mapOf(1 to id, 2 to amount)
+        val params = mapOf(1 to id, 2 to attributes.amount)
 
         executeUpdate(query, params)
         log.info("Proposal $id added to proposals table.")
@@ -30,10 +33,13 @@ class NegotiationDataBaseService(services: ServiceHub) : DatabaseService(service
     /**
      * Updates the attributes of a proposal in the table of proposals.
      */
-    fun updateProposal(id: String, amount: BigDecimal) {
+    fun updateProposal(
+        id: String,
+        attributes: Attributes
+    ) {
         val query = "update $TABLE_NAME set amount = ? where id = ?"
 
-        val params = mapOf(1 to amount, 2 to id)
+        val params = mapOf(1 to attributes.amount, 2 to id)
 
         executeUpdate(query, params)
         log.info("Proposal $id updated in proposals table.")
@@ -42,12 +48,13 @@ class NegotiationDataBaseService(services: ServiceHub) : DatabaseService(service
     /**
      * Retrieves the attributes of a proposal in the table of crypto values.
      */
-    fun queryProposal(id: String): BigDecimal {
+    fun queryProposal(id: String): Attributes {
         val query = "select amount from $TABLE_NAME where id = ?"
 
         val params = mapOf(1 to id)
 
-        val results = executeQuery(query, params) { it.getBigDecimal("amount") }
+        val results =
+            executeQuery(query, params) { Attributes(amount = it.getBigDecimal("amount")) }
 
         if (results.isEmpty()) {
             throw IllegalArgumentException("Proposal $id not present in database.")
