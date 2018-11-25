@@ -20,11 +20,12 @@ class NegotiationDataBaseService(services: ServiceHub) : DatabaseService(service
      */
     fun addProposal(
         id: String,
+        role: ProposalFlow.Role,
         attributes: Attributes
     ) {
-        val query = "insert into $TABLE_NAME values(?, ?)"
+        val query = "insert into $TABLE_NAME values(?, ?, ?)"
 
-        val params = mapOf(1 to id, 2 to attributes.amount)
+        val params = mapOf(1 to id, 2 to role.name, 3 to attributes.amount)
 
         executeUpdate(query, params)
         log.info("Proposal $id added to proposals table.")
@@ -35,11 +36,12 @@ class NegotiationDataBaseService(services: ServiceHub) : DatabaseService(service
      */
     fun updateProposal(
         id: String,
+        role: ProposalFlow.Role,
         attributes: Attributes
     ) {
-        val query = "update $TABLE_NAME set amount = ? where id = ?"
+        val query = "update $TABLE_NAME set amount = ? where id = ? and role = ?"
 
-        val params = mapOf(1 to attributes.amount, 2 to id)
+        val params = mapOf(1 to attributes.amount, 2 to id, 3 to role.name)
 
         executeUpdate(query, params)
         log.info("Proposal $id updated in proposals table.")
@@ -48,10 +50,10 @@ class NegotiationDataBaseService(services: ServiceHub) : DatabaseService(service
     /**
      * Retrieves the attributes of a proposal in the table of crypto values.
      */
-    fun queryProposal(id: String): Attributes {
-        val query = "select amount from $TABLE_NAME where id = ?"
+    fun queryProposal(id: String, role: ProposalFlow.Role): Attributes {
+        val query = "select * from $TABLE_NAME where id = ? and role = ?"
 
-        val params = mapOf(1 to id)
+        val params = mapOf(1 to id, 2 to role.name)
 
         val results =
             executeQuery(query, params) { Attributes(amount = it.getBigDecimal("amount")) }
@@ -72,6 +74,7 @@ class NegotiationDataBaseService(services: ServiceHub) : DatabaseService(service
         val query = """
             create table if not exists $TABLE_NAME(
                 id varchar(64),
+                role varchar(64),
                 amount decimal
             )"""
 
