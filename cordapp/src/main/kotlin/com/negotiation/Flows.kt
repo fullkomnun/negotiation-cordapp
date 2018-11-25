@@ -294,7 +294,7 @@ object ReconcileFlow {
                     when (output) {
                         is ProposalState -> throw IllegalStateException()
                         is ProposalMismatchState -> TODO()
-                        is TradeState -> if (buyerProposal != sellerProposal) 
+                        is TradeState -> if (buyerProposal != sellerProposal)
                     }
                 }
             })
