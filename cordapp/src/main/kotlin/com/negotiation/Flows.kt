@@ -56,14 +56,14 @@ object ProposalFlow {
                 }
 
             // Creating the command.
-            val commandType = ProposalAndTradeContract.Commands.Propose()
+            val commandType = ProposalsContract.Commands.Propose()
             val requiredSigners = listOf(ourIdentity.owningKey, counterparty.owningKey)
             val command = Command(commandType, requiredSigners)
 
             // Building the transaction.
             val notary = serviceHub.networkMapCache.notaryIdentities.first()
             val txBuilder = TransactionBuilder(notary)
-            txBuilder.addOutputState(output, ProposalAndTradeContract.ID)
+            txBuilder.addOutputState(output, ProposalsContract.ID)
             txBuilder.addCommand(command)
 
             // Signing the transaction ourselves.
@@ -92,6 +92,7 @@ object ProposalFlow {
     }
 }
 
+
 object MatchProposalFlow {
     @InitiatingFlow
     @StartableByRPC
@@ -118,13 +119,13 @@ object MatchProposalFlow {
             // Creating the command.
             val requiredSigners = listOf(input.proposer.owningKey, input.proposee.owningKey)
             val command =
-                Command(ProposalAndTradeContract.Commands.MatchProposal(), requiredSigners)
+                Command(ProposalsContract.Commands.MatchProposal(), requiredSigners)
 
             // Building the transaction.
             val notary = inputStateAndRef.state.notary
             val txBuilder = TransactionBuilder(notary)
             txBuilder.addInputState(inputStateAndRef)
-            txBuilder.addOutputState(output, ProposalAndTradeContract.ID)
+            txBuilder.addOutputState(output, ProposalsContract.ID)
             txBuilder.addCommand(command)
 
             // Signing the transaction ourselves.
@@ -196,7 +197,7 @@ object RevealProposalsFlow {
                         val expectedHash =
                             if (counterparty == state.buyer) state.buyerAttributesHash else state.sellerAttributesHash
                         if (their.hashCode().toString(16) != expectedHash)
-                            throw FlowException("The integrity of the proposal provided by the proposee cannot be guaranteed")
+                            throw FlowException("The integrity of the proposal provided by the proposer cannot be guaranteed")
                         their
                     }
             val (buyerProposal, sellerProposal) = if (ourIdentity == state.buyer) ourProposal to theirProposal
@@ -212,7 +213,7 @@ object RevealProposalsFlow {
         FlowLogic<Attributes>() {
         @Suspendable
         override fun call(): Attributes {
-            val (proposalId, theirProposal) = counterpartySession.receive<IdWithAttributes>()
+            val (proposalId, theirProposal, ourRole) = counterpartySession.receive<IdWithAttributes>()
                 .unwrap { (id, attr) ->
 
                     // Retrieving the current state from the vault.
@@ -224,23 +225,21 @@ object RevealProposalsFlow {
 
                     val expectedHash =
                         if (counterpartySession.counterparty == state.buyer) state.buyerAttributesHash else state.sellerAttributesHash
+                    if (attr.hashCode().toString(16) != expectedHash) throw FlowException("The integrity of the proposal provided by the proposee cannot be guaranteed")
 
-                    id to attr
-                } // TODO: validate
-
-
+                    Triple(id, attr, if (ourIdentity == state.buyer) Buyer else Seller)
+                }
 
             val dbService = serviceHub.cordaService(NegotiationDataBaseService::class.java)
-            val ourRole = if (ourIdentity == state.buyer) Buyer else Seller
-
-            dbService.addProposal(proposalId, ourRole.opposite, theirProposal)
-            return dbService.queryProposal(proposalId, ourRole)
+            dbService.addProposal(proposalId.externalId!!, ourRole.opposite, theirProposal)
+            return dbService.queryProposal(proposalId.externalId!!, ourRole)
         }
     }
 }
 
 object ReconcileFlow {
     class Initiator(
+        val proposalId: UniqueIdentifier,
         val buyerProposal: Attributes,
         val sellerProposal: Attributes
     ) : FlowLogic<UniqueIdentifier>() {
@@ -248,7 +247,6 @@ object ReconcileFlow {
         override val progressTracker = ProgressTracker()
 
         override fun call(): UniqueIdentifier {
-            val proposalId: UniqueIdentifier = UniqueIdentifier.fromString("kuku") // TODO
 
             // Retrieving the input from the vault.
             val inputCriteria =
@@ -275,7 +273,7 @@ object ReconcileFlow {
             val notary = inputStateAndRef.state.notary
             val txBuilder = TransactionBuilder(notary)
             txBuilder.addInputState(inputStateAndRef)
-            txBuilder.addOutputState(output, ProposalAndTradeContract.ID) // TODO: contract
+            txBuilder.addOutputState(output, ReconciliationContract.ID)
 
             val (wellKnownProposer, wellKnownProposee) = listOf(
                 input.proposer,
