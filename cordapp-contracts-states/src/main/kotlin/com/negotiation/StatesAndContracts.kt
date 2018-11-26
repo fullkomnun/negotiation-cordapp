@@ -84,11 +84,13 @@ open class ProposalAndTradeContract : Contract {
 }
 
 sealed class NegotiationState : LinearState {
+    abstract val id: String
+
     data class Attributes(val amount: BigDecimal)
 }
 
 data class ProposalState(
-    val id: String,
+    override val id: String,
     val buyer: AbstractParty,
     val seller: AbstractParty,
     val proposer: AbstractParty,
@@ -101,7 +103,7 @@ data class ProposalState(
 }
 
 data class ProposalMismatchState(
-    val id: String,
+    override val id: String,
     val buyer: AbstractParty,
     val seller: AbstractParty,
     val proposer: AbstractParty,
@@ -114,7 +116,7 @@ data class ProposalMismatchState(
 }
 
 data class TradeState(
-    val id: String,
+    override val id: String,
     val buyer: AbstractParty,
     val seller: AbstractParty,
     val attributes: Attributes

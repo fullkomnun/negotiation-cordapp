@@ -15,7 +15,6 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.ProgressTracker
 import net.corda.core.utilities.unwrap
-import java.math.BigDecimal
 
 object ProposalFlow {
     enum class Role { Buyer, Seller;
@@ -96,24 +95,21 @@ object ProposalFlow {
 object MatchProposalFlow {
     @InitiatingFlow
     @StartableByRPC
-    class Initiator(val proposalId: UniqueIdentifier, val amount: BigDecimal) : FlowLogic<Unit>() {
+    class Initiator(val proposalId: UniqueIdentifier, val ourProposal: Attributes) :
+        FlowLogic<UniqueIdentifier>() {
         override val progressTracker = ProgressTracker()
 
         @Suspendable
-        override fun call() {
+        override fun call(): UniqueIdentifier {
             // Retrieving the input from the vault.
             val inputCriteria =
                 QueryCriteria.LinearStateQueryCriteria(linearId = listOf(proposalId))
             val inputStateAndRef =
                 serviceHub.vaultService.queryBy<ProposalState>(inputCriteria).states.single()
             val input = inputStateAndRef.state.data
-//
-//            val dbService = serviceHub.cordaService(NegotiationDataBaseService::class.java)
-//            val attributes = Attributes(amount)
-//            dbService.addProposal(proposalId.externalId!!, attributes)
 
             // Creating the output.
-            val attributesHash = Attributes(amount).hashCode().toString(16)
+            val attributesHash = Attributes(ourProposal.amount).hashCode().toString(16)
             val output = input.let {
                 if (ourIdentity == it.buyer) it.copy(buyerAttributesHash = attributesHash)
                 else it.copy(sellerAttributesHash = attributesHash)
@@ -145,7 +141,8 @@ object MatchProposalFlow {
             val fullyStx = subFlow(CollectSignaturesFlow(partStx, listOf(counterpartySession)))
 
             // Finalising the transaction.
-            subFlow(FinalityFlow(fullyStx))
+            val finalisedTx = subFlow(FinalityFlow(fullyStx))
+            return finalisedTx.tx.outputsOfType<ProposalState>().single().linearId
         }
     }
 
@@ -173,7 +170,8 @@ data class BuyerSellerProposals(
 )
 
 object RevealProposalsFlow {
-    class Initiator(val proposalId: UniqueIdentifier) : FlowLogic<BuyerSellerProposals>() {
+    class Initiator(val proposalId: UniqueIdentifier, val ourProposal: Attributes) :
+        FlowLogic<BuyerSellerProposals>() {
         override val progressTracker = ProgressTracker()
 
         @Suspendable
@@ -183,43 +181,60 @@ object RevealProposalsFlow {
                 QueryCriteria.LinearStateQueryCriteria(linearId = listOf(proposalId))
             val inputStateAndRef =
                 serviceHub.vaultService.queryBy<ProposalState>(inputCriteria).states.single()
-            val input = inputStateAndRef.state.data
-
-//            val dbService = serviceHub.cordaService(NegotiationDataBaseService::class.java)
-//            val ourProposal = dbService.queryProposal(proposalId.externalId!!, )
+            val state = inputStateAndRef.state.data
 
             val (wellKnownProposer, wellKnownProposee) = listOf(
-                input.proposer,
-                input.proposee
+                state.proposer,
+                state.proposee
             ).map { serviceHub.identityService.requireWellKnownPartyFromAnonymous(it) }
             val counterparty =
                 if (ourIdentity == wellKnownProposer) wellKnownProposee else wellKnownProposer
             val counterpartySession = initiateFlow(counterparty)
             val theirProposal =
-                counterpartySession.sendAndReceive<Attributes>(ourProposal)
-                    .unwrap { it } // TODO: validate
-            return BuyerSellerProposals(ourProposal, theirProposal) // TODO: order
+                counterpartySession.sendAndReceive<Attributes>(IdWithAttributes(proposalId, ourProposal))
+                    .unwrap { their ->
+                        val expectedHash =
+                            if (counterparty == state.buyer) state.buyerAttributesHash else state.sellerAttributesHash
+                        if (their.hashCode().toString(16) != expectedHash)
+                            throw FlowException("The integrity of the proposal provided by the proposee cannot be guaranteed")
+                        their
+                    }
+            val (buyerProposal, sellerProposal) = if (ourIdentity == state.buyer) ourProposal to theirProposal
+            else theirProposal to ourProposal
+            return BuyerSellerProposals(buyerProposal, sellerProposal)
         }
     }
+
+    data class IdWithAttributes(val id: UniqueIdentifier, val attributes: Attributes)
 
     @InitiatedBy(Initiator::class)
     class Responder(val counterpartySession: FlowSession) :
         FlowLogic<Attributes>() {
         @Suspendable
         override fun call(): Attributes {
-            // Retrieving the current state from the vault.
-            val inputCriteria =
-                QueryCriteria.LinearStateQueryCriteria(linearId = listOf(proposalId)) // TODO: get id
-            val state =
-                serviceHub.vaultService.queryBy<ProposalState>(inputCriteria).states.single()
-                    .state.data
+            val (proposalId, theirProposal) = counterpartySession.receive<IdWithAttributes>()
+                .unwrap { (id, attr) ->
+
+                    // Retrieving the current state from the vault.
+                    val inputCriteria =
+                        QueryCriteria.LinearStateQueryCriteria(linearId = listOf(id))
+                    val state =
+                        serviceHub.vaultService.queryBy<ProposalState>(inputCriteria).states.single()
+                            .state.data
+
+                    val expectedHash =
+                        if (counterpartySession.counterparty == state.buyer) state.buyerAttributesHash else state.sellerAttributesHash
+
+                    id to attr
+                } // TODO: validate
+
+
 
             val dbService = serviceHub.cordaService(NegotiationDataBaseService::class.java)
             val ourRole = if (ourIdentity == state.buyer) Buyer else Seller
-            val theirProposal = counterpartySession.receive<Attributes>()
-                .unwrap { it } // TODO: validate
-            dbService.addProposal(proposalId, ourRole.opposite, theirProposal) // TODO: get id
-            return dbService.queryProposal(proposalId, ourRole) // TODO: get id
+
+            dbService.addProposal(proposalId, ourRole.opposite, theirProposal)
+            return dbService.queryProposal(proposalId, ourRole)
         }
     }
 }
@@ -252,7 +267,8 @@ object ReconcileFlow {
                     input.proposer,
                     input.proposee,
                     buyerProposal,
-                    sellerProposal)
+                    sellerProposal
+                )
             }
 
             // Building the transaction.
@@ -289,12 +305,16 @@ object ReconcileFlow {
                     val ledgerTx = stx.toLedgerTransaction(serviceHub, false)
                     val output = ledgerTx.outputsOfType<NegotiationState>().single()
                     val dbService = serviceHub.cordaService(NegotiationDataBaseService::class.java)
-                    val buyerProposal = dbService.queryProposal(output.)
-                    val sellerProposal = dbService.queryProposal(output.)
+                    val buyerProposal = dbService.queryProposal(output.id, Buyer)
+                    val sellerProposal = dbService.queryProposal(output.id, Seller)
                     when (output) {
-                        is ProposalState -> throw IllegalStateException()
-                        is ProposalMismatchState -> TODO()
-                        is TradeState -> if (buyerProposal != sellerProposal)
+                        is ProposalState -> throw FlowException()
+                        is ProposalMismatchState -> if (buyerProposal == sellerProposal) throw FlowException(
+                            "Transaction outcome is mismatch while proposals match"
+                        )
+                        is TradeState -> if (buyerProposal != sellerProposal) throw FlowException(
+                            "Transaction outcome is match while proposals do not match"
+                        )
                     }
                 }
             })
